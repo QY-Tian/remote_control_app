@@ -35,36 +35,22 @@ jobs:
         cd ios
         pod install --repo-update
         
-    - name: Build iOS with xcodebuild (bypass Flutter signing check)
+    - name: Build iOS with auto-signing
       run: |
-        cd ios
-        xcodebuild \
-          -workspace Runner.xcworkspace \
-          -scheme Runner \
-          -configuration Release \
-          -sdk iphoneos \
-          -destination 'generic/platform=iOS' \
-          CODE_SIGNING_ALLOWED=NO \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGN_IDENTITY="" \
-          DEVELOPMENT_TEAM="" \
-          PROVISIONING_PROFILE_SPECIFIER="" \
-          ARCHS="arm64" \
-          ONLY_ACTIVE_ARCH=NO \
-          BUILD_DIR=../build/ios \
-          clean build \
-          | xcpretty --color || true
-
-    - name: Create IPA
+        flutter config --no-enable-swift-package-manager
+        flutter build ios --simulator --no-codesign
+        
+    - name: Re-sign IPA for device installation
       run: |
-        cd build/ios/Release-iphoneos
+        cd build/ios/iphonesimulator
         mkdir -p Payload
         cp -r Runner.app Payload/
+        /usr/libexec/PlistBuddy -c "Delete :UISupportedDevices" Payload/Runner.app/Info.plist 2>/dev/null || true
         zip -r app.ipa Payload
         
     - name: Upload IPA
       uses: actions/upload-artifact@v4
       with:
-        name: ios-release-ipa
-        path: build/ios/Release-iphoneos/app.ipa
+        name: ios-unsigned-ipa
+        path: build/ios/iphonesimulator/app.ipa
         retention-days: 30

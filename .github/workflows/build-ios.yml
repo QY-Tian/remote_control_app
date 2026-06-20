@@ -38,8 +38,6 @@ jobs:
     - name: Build iOS with xcodebuild (bypass Flutter signing check)
       run: |
         cd ios
-        sudo xcode-select -s /Applications/Xcode_15.4.app
-        export DEVELOPER_DIR=/Applications/Xcode_15.4.app/Contents/Developer
         xcodebuild \
           -workspace Runner.xcworkspace \
           -scheme Runner \

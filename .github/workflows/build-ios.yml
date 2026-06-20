@@ -24,6 +24,12 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
       
+    - name: Generate iOS project
+      run: |
+        # 删除不完整的 iOS 项目，重新生成
+        rm -rf ios/
+        flutter create --platforms=ios .
+        
     - name: Setup CocoaPods
       run: |
         sudo gem install cocoapods

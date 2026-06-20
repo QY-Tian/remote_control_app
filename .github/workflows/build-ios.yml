@@ -26,7 +26,6 @@ jobs:
       
     - name: Generate iOS project
       run: |
-        # 删除不完整的 iOS 项目，重新生成
         rm -rf ios/
         flutter create --platforms=ios .
         
@@ -36,7 +35,24 @@ jobs:
         cd ios
         pod install --repo-update
         
-    - name: Build iOS (no codesign)
+    - name: Configure signing for physical device
+      run: |
+        cd ios
+        ruby -e "
+        require 'xcodeproj'
+        project = Xcodeproj::Project.open('Runner.xcodeproj')
+        target = project.targets.first
+        target.build_configurations.each do |config|
+          config.build_settings['CODE_SIGN_STYLE'] = 'Automatic'
+          config.build_settings['DEVELOPMENT_TEAM'] = ''
+          config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = ''
+          config.build_settings['CODE_SIGN_IDENTITY'] = 'iPhone Developer'
+        end
+        project.save
+        puts 'Signing configured for automatic'
+        "
+        
+    - name: Build iOS for device (no codesign)
       run: |
         flutter config --no-enable-swift-package-manager
         flutter build ios --release --no-codesign

@@ -35,20 +35,31 @@ jobs:
         cd ios
         pod install --repo-update
         
-    - name: Disable code signing
+    - name: Build iOS with xcodebuild (bypass Flutter signing check)
       run: |
         cd ios
-        sed -i '' 's/CODE_SIGN_STYLE = Automatic/CODE_SIGN_STYLE = Manual/g' Runner.xcodeproj/project.pbxproj
-        sed -i '' 's/DEVELOPMENT_TEAM = ""/DEVELOPMENT_TEAM = "XXXXXXXXXX"/g' Runner.xcodeproj/project.pbxproj
-        
-    - name: Build iOS for device (no codesign)
-      run: |
-        flutter config --no-enable-swift-package-manager
-        flutter build ios --release --no-codesign
-      
+        sudo xcode-select -s /Applications/Xcode_15.4.app
+        export DEVELOPER_DIR=/Applications/Xcode_15.4.app/Contents/Developer
+        xcodebuild \
+          -workspace Runner.xcworkspace \
+          -scheme Runner \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination 'generic/platform=iOS' \
+          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGN_IDENTITY="" \
+          DEVELOPMENT_TEAM="" \
+          PROVISIONING_PROFILE_SPECIFIER="" \
+          ARCHS="arm64" \
+          ONLY_ACTIVE_ARCH=NO \
+          BUILD_DIR=../build/ios \
+          clean build \
+          | xcpretty --color || true
+
     - name: Create IPA
       run: |
-        cd build/ios/iphoneos
+        cd build/ios/Release-iphoneos
         mkdir -p Payload
         cp -r Runner.app Payload/
         zip -r app.ipa Payload
@@ -57,5 +68,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ios-release-ipa
-        path: build/ios/iphoneos/app.ipa
+        path: build/ios/Release-iphoneos/app.ipa
         retention-days: 30

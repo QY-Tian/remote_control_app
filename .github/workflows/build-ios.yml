@@ -31,7 +31,9 @@ jobs:
         pod install --repo-update
         
     - name: Build iOS (no codesign)
-      run: flutter build ios --release --no-codesign
+      run: |
+        flutter config --no-enable-swift-package-manager
+        flutter build ios --release --no-codesign
       
     - name: Create IPA
       run: |
